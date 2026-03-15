@@ -18,7 +18,7 @@ For more information on what you can do with this bot, check out our [website](h
 
 ### Localization
 
-Localization is done on the [TWM translation](https://translate.theworldmachine.xyz/translate/the-world-machine/bot) website (we are using [Weblate](https://translate.theworldmachine.xyz/about/)). You are required to register using a Google account for the time being, after that you may suggest any changes to the text in any language, for the Lead Translators of that language to review. Contact @meqativ on the community server if you wish to become a Lead Translator for any language.
+Localization is done on the [TWM translation](https://translate.theworldmachine.xyz/translate/proxot-system/bot) website (we are using [Weblate](https://translate.theworldmachine.xyz/about/)). You are required to register using a Google account for the time being, after that you may suggest any changes to the text in any language, for the Lead Translators of that language to review. Contact @meqativ on the community server if you wish to become a Lead Translator for any language.
 
 > [!NOTE]
 > Some basic rules for translating
@@ -52,7 +52,7 @@ python -m pip install pipenv
 Clone the repo to get the codebase downloaded on your device
 
 ```commandline
-git clone https://github.com/the-world-machine/bot the-world-machine --recursive
+git clone https://github.com/proxot-system/bot proxot-system --recursive
 ```
 
 > [!NOTE]
