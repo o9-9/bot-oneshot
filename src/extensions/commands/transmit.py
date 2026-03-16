@@ -436,7 +436,8 @@ class TransmissionCommands(Extension):
 			embed = await self.message_manager(message, user, allow_images)
 			if isinstance(other_connection, TYPE_MESSAGEABLE_CHANNEL):
 				await other_connection.send(embeds=embed)
-			raise TypeError("tried to send message in a channel where i can't send messages :mumawomp:")
+			else:
+				raise TypeError("tried to send message in a channel where i can't send messages :mumawomp:")
 
 	async def message_manager(self, message: Message, user: TransmitUser, allow_images: bool):
 		final_text = message.content
