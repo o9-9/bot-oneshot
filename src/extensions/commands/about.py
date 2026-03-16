@@ -280,8 +280,8 @@ class AboutCommand(Extension):
 		components.append(
 			TextDisplayComponent(
 				# TODO sort by country flag
-				f"""{await lformat(loc, loc.l("categories.translators"))}:
-				{"\n".join([await contributor.render(loc, simple=True) for contributor in contributors["translators"]])}"""
+				await lformat(loc, loc.l("categories.translators"))
+				+ f":\n{'\n'.join([await contributor.render(loc, simple=True) for contributor in contributors['translators']])}"
 			)
 		)
 		await ctx.edit(components=ContainerComponent(*components, accent_color=Colors.DEFAULT))
