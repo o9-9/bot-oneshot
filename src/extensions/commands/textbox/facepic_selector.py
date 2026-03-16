@@ -51,32 +51,66 @@ async def render_selector_ui(
 		current_level = current_level.get(part, {})
 
 	loc_path = ".".join(f'["{name}"]' for name in path)
-	description = loc_facepics.l(f"{loc_path}._description", typecheck=Any, return_None_on_not_found=True)
+	prev_loc_path = ".".join(f'["{name}"]' for name in path[:-1])
 	name = (
 		loc_facepics.l(f"{loc_path}._name", typecheck=Any, return_None_on_not_found=True) or path[-1]
 		if len(path) > 0
 		else None
 	)
-	credits = loc_facepics.l(f"{loc_path}._credits", typecheck=Any, return_None_on_not_found=True)
-	icon = current_level.get(
-		"icon", current_level.get("Normal", previous_level.get("icon", previous_level.get("Normal")))
+	_other = (
+		lambda: current_level
+		if isinstance(current_level, str)
+		else previous_level.get(
+			"icon",
+			previous_level.get("Normal"),
+		)
 	)
+	icon = (
+		current_level.get("icon", current_level.get("Normal", _other()))
+		if not isinstance(current_level, str)
+		else _other()
+	)
+	is_icon_metadata_facepic = "icon" in previous_level and previous_level.get("icon") is icon
 
+	description = loc_facepics.l(
+		f"{loc_path if not is_icon_metadata_facepic else prev_loc_path}._description",
+		typecheck=Any,
+		return_None_on_not_found=True,
+	)
+	credits = loc_facepics.l(
+		f"{loc_path if not is_icon_metadata_facepic else prev_loc_path}._credits",
+		typecheck=Any,
+		return_None_on_not_found=True,
+	)
+	expression = None
+	if isinstance(current_level, str):
+		if not is_icon_metadata_facepic:
+			expression = name
+		name = (
+			loc_facepics.l(f"{prev_loc_path}._name", typecheck=Any, return_None_on_not_found=True) or path[-1]
+			if len(path) > 0
+			else None
+		)
 	embed = Embed(
 		description=await lformat(
 			loc,
 			loc.l("textbox.facepic_picker.layout"),
 			location=location,
 			name=name,
+			expression=expression,
 			description=description,
 			credits=credits,
 			frame_index=frame_index + 1,
 		),
 		color=Colors.DEFAULT,
 	)
-
 	if icon:
 		embed.set_thumbnail(make_emoji_cdn_url(emoji_id=str(icon)))
+	if isinstance(current_level, str):
+		return await ctx.edit_origin(
+			embed=embed,
+			allowed_mentions=AllowedMentions(parse=[], roles=[], users=[]),
+		)
 
 	all_buttons: list[Button] = []
 
@@ -96,7 +130,7 @@ async def render_selector_ui(
 				style=ButtonStyle.BLURPLE,
 				label=key + "/",
 				emoji=emoji,
-				custom_id=f"textbox_fs select {state_id} {frame_index} 0 #{new_path_str}",
+				custom_id=f"textbox_fs select {state_id} {frame_index} 0 {new_path_str}",
 			)
 		else:
 			button = Button(
@@ -123,7 +157,7 @@ async def render_selector_ui(
 			Button(
 				style=ButtonStyle.BLURPLE,
 				emoji="⬅️",
-				custom_id=f"textbox_fs select {state_id} {frame_index} {page - 1} #{path_str}",
+				custom_id=f"textbox_fs select {state_id} {frame_index} {page - 1} {path_str}",
 			)
 		)
 		free_slots -= 1
@@ -134,7 +168,7 @@ async def render_selector_ui(
 			Button(
 				style=ButtonStyle.BLURPLE,
 				emoji="⬆️",
-				custom_id=f"textbox_fs select {state_id} {frame_index} 0 #{parent_path}",
+				custom_id=f"textbox_fs select {state_id} {frame_index} 0 {parent_path}",
 			)
 		)
 		free_slots -= 1
@@ -167,7 +201,7 @@ async def render_selector_ui(
 			Button(
 				style=ButtonStyle.BLURPLE,
 				emoji="➡️",
-				custom_id=f"textbox_fs select {state_id} {frame_index} {page + 1} #{path_str}",
+				custom_id=f"textbox_fs select {state_id} {frame_index} {page + 1} {path_str}",
 			)
 		)
 
@@ -198,7 +232,7 @@ async def init_facepic_selector(self, ctx: ComponentContext):
 
 
 select_regex = re.compile(
-	r"textbox_fs select (?P<state_id>-?\d+) (?P<frame_index>-?\d+) (?P<page>\d+)(?: (?P<noupd>\#)?(?P<path>.*))?$"
+	r"textbox_fs select (?P<state_id>-?\d+) (?P<frame_index>-?\d+) (?P<page>\d+)(?: (?P<path>.*))?$"
 )
 
 
@@ -211,12 +245,12 @@ async def handle_facepic_selection(self, ctx: ComponentContext):
 	if not match:
 		return
 
-	state_id, frame_index_str, page_str, noupd, path_str = match.groups()
+	state_id, frame_index_str, page_str, path_str = match.groups()
 	frame_index = int(frame_index_str)
 	page = int(page_str)
 	path = path_str.strip().split("/") if path_str and path_str.strip() else []
 
-	if not noupd and path_str.strip():
+	if path_str.strip():
 		try:
 			_, state, frame_data = await state_shortcut(ctx, state_id, frame_index)
 		except StateShortcutError:
@@ -228,6 +262,7 @@ async def handle_facepic_selection(self, ctx: ComponentContext):
 				face_path = ctx.user.avatar_url
 		frame_data.text = set_facepic_in_frame_text(frame_data.text, face_path)
 
+		await update_textbox(state.memory_leak, state_id, int(frame_index) or 0, type="loading", edit=True)
 		asyncio.create_task(update_textbox(state.memory_leak, state_id, frame_index, edit=True))
 
 	selected_item = f_storage.facepics
@@ -236,7 +271,4 @@ async def handle_facepic_selection(self, ctx: ComponentContext):
 		if selected_item is None:
 			return await ctx.edit_origin()
 
-	if isinstance(selected_item, dict):
-		await render_selector_ui(ctx, state_id, frame_index, path, page)
-	else:
-		await ctx.edit_origin()
+	await render_selector_ui(ctx, state_id, frame_index, path, page)

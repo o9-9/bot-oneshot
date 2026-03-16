@@ -38,7 +38,7 @@ from interactions.models.discord.components import (
 from utilities.config import debugging, get_config
 from utilities.localization.localization import Localization, lformat
 from utilities.localization.minis import put_mini
-from utilities.message_decorations import Colors, fancy_message
+from utilities.message_decorations import Colors
 from utilities.misc import (
 	BadResults,
 	SortOption,
@@ -139,7 +139,7 @@ async def start(
 				frames=Frame(text=text),
 			),
 		)
-
+	await respond(ctx, state_id, frame_index or 0, type="loading", edit=True)
 	if force_send or (send_to != 1 and (len(text) != 0 and face_path != None)):
 		await send_output(ctx, state_id, 0)
 
@@ -229,10 +229,12 @@ async def handle_components(self, ctx: ComponentContext):
 		case "change_text":
 			return await init_change_text_flow(ctx, state_id, frame_index)
 		case "delete_frame":
+			await respond(ctx, state_id, int(frame_index) or 0, type="loading", edit=True)
 			del state.frames[int(frame_index)]
 		case "edit":
 			return await init_edit_flow(ctx, state_id, frame_index)
 		case "render":
+			await respond(ctx, state_id, int(frame_index) or 0, type="loading", edit=True)
 			await send_output(ctx, state_id, int(frame_index))
 
 	await respond(ctx, state_id, int(frame_index))
@@ -378,15 +380,18 @@ async def handle_update_text_modal(self, ctx: ModalContext, new_text: str):
 		loc, state, frame_data = await state_shortcut(ctx, state_id, frame_index)
 	except StateShortcutError:
 		return
-	old_text = frame_data.text
+	# old_text = frame_data.text
 	frame_data.text = new_text
-	if debugging():
-		await fancy_message(
-			ctx,
-			await lformat(loc, loc.l("textbox.modal.edit_text.response"), new_text=new_text, old_text=old_text),
-			ephemeral=True,
-		)
-	await respond(ctx, state_id, int(frame_index))
+	# if debugging():
+	# 	asyncio.create_task(
+	# 		fancy_message(
+	# 			ctx,
+	# 			await lformat(loc, loc.l("textbox.modal.edit_text.response"), new_text=new_text, old_text=old_text),
+	# 			ephemeral=True,
+	# 		)
+	# 	)
+	await respond(ctx, state_id, int(frame_index) or 0, type="loading")
+	await respond(ctx, state_id, int(frame_index), edit=True)
 
 
 async def init_edit_flow(ctx: ComponentContext | SlashContext, state_id: str, frame_index: str):
@@ -429,15 +434,17 @@ async def handle_edit_modal(self, ctx: ModalContext, updated_frames: str):
 		loc, state, frame_data = await state_shortcut(ctx, state_id, frame_index)
 	except StateShortcutError:
 		return
-	old_frames = ""
-	for frame in state.frames:
-		old_frames += str(frame) + "\n"
+	# old_frames = ""
+	# for frame in state.frames:
+	# 	old_frames += str(frame) + "\n"
 	try:
 		new_frames = [Frame.from_string(raw) for raw in updated_frames.split("\n")]
 	except BaseException as e:
 		return await ctx.send(f"Woopsie! {e}", ephemeral=True)
 	state.frames = new_frames
-	await respond(ctx, state_id, int(frame_index))
+
+	await respond(ctx, state_id, int(frame_index) or 0, type="loading")
+	await respond(ctx, state_id, int(frame_index), edit=True)
 
 
 async def respond(
@@ -456,7 +463,7 @@ async def respond(
 	content: str | None = None
 	accent_color = Colors.BAD.value
 
-	if type == "normal":
+	if type == "normal" or (type == "loading" and state_id is not None and frame_index is not None):
 		assert state_id is not None and frame_index is not None
 
 		try:
@@ -466,7 +473,6 @@ async def respond(
 
 		if warnings is None:
 			warnings = []
-		status = ""
 		pos = ""
 		if len(state.frames) > 1 or frame_index != 0:
 			pos = f"\n-# {await lformat(loc, loc.l('textbox.frame_position'), current=int(frame_index) + 1, total=len(state.frames))}"
@@ -474,20 +480,27 @@ async def respond(
 			pos += "\n-# **sid**: " + state_id
 		next_frame_exists = len(state.frames) != int(frame_index) + 1
 		print(state)
-
-		preview = await render_to_file(ctx, state, frame_preview_index=int(frame_index))
-		filename = sanitize_filename(preview.file_name or "meow")
+		if type != "loading":
+			preview = await render_to_file(ctx, state, frame_preview_index=int(frame_index))
+			filename = sanitize_filename(preview.file_name or "meow")
+			files.append(preview)
 		tbb = File(
 			file=io.BytesIO((await state.to_string(loc)).encode("utf-8")),
-			file_name=filename.rsplit(".", maxsplit=1)[0] + ".backup.tbb",
+			file_name=(filename.rsplit(".", maxsplit=1)[0] if type != "loading" else "generated") + ".backup.tbb",
 		)
-		files.extend([tbb, preview])
+		files.append(tbb)
 		components.extend(
 			[
 				FileComponent(file=UnfurledMediaItem(url=f"attachment://{tbb.file_name}")),
 				MediaGalleryComponent(
 					items=[
-						MediaGalleryItem(media=UnfurledMediaItem(url=f"attachment://{filename}")),
+						MediaGalleryItem(
+							media=UnfurledMediaItem(
+								url=f"attachment://{filename}"
+								if type != "loading"
+								else "https://cdn.discordapp.com/attachments/1018976804117159976/1482946959835791411/attachment4-ezgif.com-coalesce.gif"
+							)
+						),
 					]
 				),
 				ActionRow(
