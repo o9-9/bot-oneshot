@@ -1,14 +1,6 @@
+import urllib.parse
 from dataclasses import dataclass, fields, is_dataclass
-from typing import (
-	Any,
-	Generic,
-	Iterable,
-	MutableMapping,
-	TypeVar,
-	get_origin,
-	get_type_hints,
-	overload,
-)
+from typing import Any, Generic, Iterable, MutableMapping, TypeVar, get_origin, get_type_hints, overload
 
 import yaml
 from interactions import Snowflake
@@ -40,23 +32,11 @@ def init_things(self):
 
 			if isinstance(value, dict):
 				if get_origin(field_type) == DBDynamicDict:
-					setattr(
-						self,
-						name,
-						field_type(_parent=self, _parent_field=name, **value),
-					)
+					setattr(self, name, field_type(_parent=self, _parent_field=name, **value))
 				else:
-					setattr(
-						self,
-						name,
-						init_things(field_type(_parent=self, _parent_field=name, **value)),
-					)
+					setattr(self, name, init_things(field_type(_parent=self, _parent_field=name, **value)))
 			elif isinstance(value, list):
-				setattr(
-					self,
-					name,
-					field_type(default=value, _parent=self, _parent_field=name),
-				)
+				setattr(self, name, field_type(default=value, _parent=self, _parent_field=name))
 	return self
 
 
@@ -108,22 +88,12 @@ class DBDict(MutableMapping):
 	_parent: Collection | None
 	_parent_field: str | None
 
-	def __init__(
-		self,
-		*args,
-		_parent: Collection | None = None,
-		_parent_field: str | None = None,
-		**kwargs,
-	):
+	def __init__(self, *args, _parent: Collection | None = None, _parent_field: str | None = None, **kwargs):
 		self._parent = _parent
 		self._parent_field = _parent_field
 
 		initial_data = dict(*args, **kwargs)
 		for key, value in initial_data.items():
-			if isinstance(value, dict):
-				value = DBDict(value, _parent=self._parent, _parent_field=f"{self._parent_field}.{key}")
-			elif isinstance(value, list):
-				value = DBList(value, _parent=self._parent, _parent_field=f"{self._parent_field}.{key}")
 			setattr(self, key, value)
 
 	def __setitem__(self, key, value):
@@ -209,7 +179,7 @@ class DBList(list, Generic[TItem]):
 	def __repr__(self):
 		return f"DB{super().__repr__()}"
 
-	async def append(self, item: TItem):
+	async def append(self, item: TItem) -> None:
 		"""Append object to the end of the list, and update self in the database"""
 		if self._parent is None or self._parent_field is None:
 			raise Exception("Parent not set for nested update.")
@@ -217,7 +187,7 @@ class DBList(list, Generic[TItem]):
 		await self._parent.update_array(self._parent_field, "$push", item)
 		super().append(item)
 
-	async def remove(self, item: TItem):
+	async def remove(self, item: TItem) -> None:
 		"""Remove first occurrence of value, and update self in the database"""
 		if self._parent is None or self._parent_field is None:
 			raise Exception("Parent not set for nested update.")
@@ -255,13 +225,7 @@ class DBDynamicDict(MutableMapping, Generic[TKey, TValue]):
 	_parent: Collection | None
 	_parent_field: str | None
 
-	def __init__(
-		self,
-		*args: Any,
-		_parent: Collection | None = None,
-		_parent_field: str | None = None,
-		**kwargs: Any,
-	):
+	def __init__(self, *args: Any, _parent: Collection | None = None, _parent_field: str | None = None, **kwargs: Any):
 		self._parent = _parent
 		self._parent_field = _parent_field
 
@@ -332,6 +296,14 @@ async def connect_to_db():
 	global connection
 	if connection is not None:
 		return
+
+	# Helper logic to dynamically build the URI to avoid shell parsing issues
+	username = urllib.parse.quote_plus(get_config("database.username"))
+	password = urllib.parse.quote_plus(get_config("database.password"))
+	host = get_config("database.host")
+	port = get_config("database.port")
+
+	connection_uri = f"mongodb://{username}:{password}@{host}:{port}/?authSource=admin"
 
 	connection = AsyncIOMotorClient(connection_uri, server_api=ServerApi("1"))
 	try:

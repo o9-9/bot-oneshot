@@ -76,8 +76,13 @@ watcher:
     # this should be a FileWatcher init option but too lazy, probably will implement later or wait for someone to pr (unimportant)
 
 database:
+  connection: # mongodb+srv://{username}:{password}@{host}
+    username: "admin" # meqativ
+    password: ~ # password in quotes
+    host: "localhost" # domain name / ip / localhost
+    port: 27017
+
   dns-fix: false # use this if you're on termux and connecting to db doesn't work
-  uri: ~ # string, example: mongodb+srv://meqativ:miaouw@---.mongodb.net  or  mongodb+srv://localhost
 
 localization:
   weblate-token:
