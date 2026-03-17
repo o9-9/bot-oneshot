@@ -1,5 +1,5 @@
 <div align="center">
-    <img src="https://avatars.githubusercontent.com/u/160534184?s=280&v=4" width="128" height="128">
+    <img src="https://github.com/proxot-system.png" width="128" height="128">
 </div>
 
 # <div align="center"> Proxot System bot (The World Machine) </div>
