@@ -67,7 +67,7 @@ def fancy_message(
 		return ctx.edit_origin(content=content, embeds=embeds, components=components)
 	if edit and ctx:
 		return ctx.edit(content=content, embeds=embeds, components=components)
-	if type(ctx) == Message:
+	if type(ctx) == Message:  # noqa: E721
 		kwargs = {
 			"content": content,
 			"embeds": embeds,
@@ -75,7 +75,7 @@ def fancy_message(
 			"ephemeral": ephemeral,
 		}
 		return ctx.reply(**kwargs)
-	elif type(ctx) == ModalContext:
+	elif type(ctx) == ModalContext:  # noqa: E721
 		return ctx.respond(content=content, embeds=embeds, components=components, ephemeral=ephemeral)
 
 	return ctx.send(content=content, embeds=embeds, ephemeral=ephemeral, components=components)

@@ -94,9 +94,9 @@ if do_rolling := get_config("bot.rolling.avatar", typecheck=bool) or get_config(
 
 	@Task.create(IntervalTrigger(get_config("bot.rolling.interval", typecheck=int)))
 	async def roll():
-		if get_config("bot.rolling.status", typecheck=bool) == True:
+		if get_config("bot.rolling.status", typecheck=bool):
 			await roll_status(client)
-		if get_config("bot.rolling.avatar", typecheck=bool) == True:
+		if get_config("bot.rolling.avatar", typecheck=bool):
 			await roll_avatar(client)
 
 
