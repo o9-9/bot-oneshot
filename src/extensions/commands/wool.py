@@ -246,7 +246,7 @@ class WoolCommands(Extension):
 
 		# reset the limit if it is a new day
 		if now >= unable_until:
-			reset_time = datetime.combine(now.date(), now.time()) + timedelta(days=1)
+			reset_time = datetime.combine(now.date(), now.time()) + timedelta(hours=18)
 			await user_data.update(daily_wool_timestamp=reset_time)
 		rolled = random.randint(0, 100)
 
