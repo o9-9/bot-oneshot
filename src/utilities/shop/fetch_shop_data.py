@@ -82,9 +82,9 @@ async def get_shop_data():
 		is_positive = False
 
 	if is_positive:
-		data.stock.value = round(random.uniform(0.3, 0.7), 1)
+		data.stock.value = round(random.uniform(0.05, 0.2), 1)
 	else:
-		data.stock.value = round(random.uniform(-0.3, -0.7), 1)
+		data.stock.value = round(random.uniform(-0.2, -0.05), 1)
 
 	price_change = data.stock.price + data.stock.value
 	data.stock.price = round(min(2, max(0.2, price_change)), 1)

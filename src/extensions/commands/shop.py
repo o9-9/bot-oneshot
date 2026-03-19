@@ -685,8 +685,8 @@ class ShopCommands(Extension):
 			stock: str = await locale_format(
 				treasures_loc,
 				treasures_loc.get_string("stock_market"),
-				value=daily_shop.stock.value,
-				price=daily_shop.stock.price,
+				change=daily_shop.stock.value,
+				rate=daily_shop.stock.price,
 			)
 			selected_treasure = kwargs.get("selected_treasure", None)
 			selected_treasure_loc: dict = {"name": "???"}
@@ -845,8 +845,8 @@ class ShopCommands(Extension):
 			stock: str = await locale_format(
 				treasures_loc,
 				treasures_loc.get_string("stock_market"),
-				value=daily_shop.stock.value,
-				price=daily_shop.stock.price,
+				change=daily_shop.stock.value,
+				rate=daily_shop.stock.price,
 			)
 
 			go_back = Button(
