@@ -23,7 +23,7 @@ class RollCommand(Extension):
 	@slash_option(
 		description="What sided dice to roll",
 		min_value=0,
-		max_value=float("9" * 15),
+		max_value=int("9" * 15),
 		name="sides",
 		opt_type=OptionType.INTEGER,
 		required=True,
