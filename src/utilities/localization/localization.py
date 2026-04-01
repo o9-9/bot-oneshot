@@ -287,8 +287,9 @@ class Localization:
 				_OO.append("")
 			
 			if _ll < len(_Ol) - 1:
-				if _lI and _ll != 0:
-					_OO.append(".")
+				if _lI:
+					if _ll != 0:
+						_OO.append(".")
 				else:
 					if _O.startswith("commands.textbox") or _O.startswith("commands.nikogotchi"):
 						_O1 =["<a:squares_wm_0:1488779378392301689>", "<a:squares_wm_1:1488779376211525642>"]
