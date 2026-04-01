@@ -253,7 +253,7 @@ class Localization:
 		if prefix_override:
 			prefix = prefix_override
 		if len(prefix) > 0:
-			path = f"{prefix}{path}" if path.startswith("[") else f"{prefix}{path}"
+			path = f"{prefix}{path}" if path.startswith("[") else f"{prefix}.{path}"
 		return self.static_get(path=path, locale=self.locale, typecheck=typecheck, **variables)
 
 	@staticmethod
