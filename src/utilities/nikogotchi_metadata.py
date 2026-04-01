@@ -46,7 +46,7 @@ async def pick_random_nikogotchi(rarity: int):
 	result = await db.get_collection("NikogotchiFeatures").find_one(
 		{"key": "NikogotchiFeatures"}, {"_id": 0, "nikogotchi": 1}
 	)
-
+  add_rarity(25) to all results
 	nikogotchi_info = result["nikogotchi"] if result else {}
 
 	candidates = []
