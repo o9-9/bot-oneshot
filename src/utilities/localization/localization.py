@@ -10,6 +10,7 @@ from termcolor import colored
 
 from extensions.events.Ready import ReadyEvent
 from utilities.config import debugging, get_config, on_prod
+from utilities.emojis import emojis
 from utilities.localization.icu import render_icu
 from utilities.misc import FrozenDict, format_type_hint, rabbit
 from utilities.source_watcher import FileModifiedEvent, all_of, filter_file_suffix, filter_path, subscribe
@@ -246,9 +247,7 @@ class Localization:
 	@overload
 	def get(self, path: str, *, prefix_override: str | None = None, **variables: Any) -> str: ...
 
-	def get(
-		self, path: str, *, prefix_override: str | None = None, typecheck: Any = str, **variables: Any
-	) -> Any:
+	def get(self, path: str, *, prefix_override: str | None = None, typecheck: Any = str, **variables: Any) -> Any:
 		_O = self.prefix
 		if prefix_override:
 			_O = prefix_override
@@ -259,13 +258,39 @@ class Localization:
 		_I = self.static_get(path=_l, locale=self.locale, typecheck=typecheck, **variables)
 		if not isinstance(_I, str) or "filename" in path:
 			return _I
-		_0 =['button', 'modal', 'placeholder', 'name', 'status', 'items', 'error', 'components', 'select', 'option', 'footer', 'input', 'label', 'fail', 'stats', 'levelupped', 'filename', 'alt', 'autocomplete', 'choice', 'filetype', 'format', 'layout', "commands.profile.view"]
+		_0 = [
+			"button",
+			"modal",
+			"placeholder",
+			"name",
+			"status",
+			"items",
+			"error",
+			"components",
+			"select",
+			"option",
+			"footer",
+			"input",
+			"label",
+			"fail",
+			"stats",
+			"levelupped",
+			"filename",
+			"alt",
+			"autocomplete",
+			"choice",
+			"filetype",
+			"format",
+			"layout",
+			"commands.profile.view",
+		]
 		_lI = any(_Il in _l.lower() for _Il in _0)
 		import random as _lO
+
 		_10 = _lO.getstate()
-		_Ol = path.split('.')
-		_OO =[]
-		
+		_Ol = path.split(".")
+		_OO = []
+
 		def _O0(_text):
 			_OOO = ""
 			for _00 in _text:
@@ -273,7 +298,7 @@ class Localization:
 				_1l1 = (_ll0 * 1337 ^ 0x55) % 256
 				_OOO += chr(0x2800 + _1l1)
 			return _OOO
-		
+
 		for _ll, _1I in enumerate(_Ol):
 			_lO.seed(_l + str(_ll))
 			_1l0 = list(_1I)
@@ -285,20 +310,25 @@ class Localization:
 					_OO.append("".join(_1l0))
 			else:
 				_OO.append("")
-			
+
 			if _ll < len(_Ol) - 1:
 				if _lI:
 					if _ll != 0:
 						_OO.append(".")
 				else:
 					if _O.startswith("commands.textbox") or _O.startswith("commands.nikogotchi"):
-						_O1 =["<a:squares_wm_0:1488779378392301689>", "<a:squares_wm_1:1488779376211525642>"]
-					elif _O.startswith("commands.shop") or _O.startswith("commands.interact") or _O.startswith("commands.gamble") or _O.startswith("commands.wool"):
-						_O1 =["<a:squares_glen_0:1488779385988190318>", "<a:squares_glen_1:1488779383995891834>"]
+						_O1 = emojis["squares"]["wm"]
+					elif (
+						_O.startswith("commands.shop")
+						or _O.startswith("commands.interact")
+						or _O.startswith("commands.gamble")
+						or _O.startswith("commands.wool")
+					):
+						_O1 = emojis["squares"]["glen"]
 					else:
-						_O1 =["<a:squares_barrens_0:1488779391222681640>", "<a:squares_barrens_1:1488779388337000569>"]
+						_O1 = emojis["squares"]["barrens"]
 					if _lO.random() < 0.20:
-						_O1 =["<a:squares_red_0:1488780724546048031>", "<a:squares_red_1:1488780716958289992>"]
+						_O1 = emojis["squares"]["red"]
 					_OO.append(_lO.choice(_O1))
 		_lO.setstate(_10)
 		return "".join(_OO)
@@ -342,9 +372,7 @@ class Localization:
 		if not typecheck == Any and not isinstance(result, typecheck):
 			if result is None:
 				return f"**{path}** not found in all attempted languages"
-			raise TypeError(
-				f"Expected {format_type_hint(typecheck)}, got {format_type_hint(type(result))} for path '{path}'"
-			)
+			raise TypeError(f"Expected {format_type_hint(typecheck)}, got {format_type_hint(type(result))} for path '{path}'")
 		return result
 
 	@staticmethod

@@ -15,6 +15,23 @@ pancakes:
   golden: "<:golden_pancakes:1290847240247574610>" #
   glitched: "<:glitched_pancakes:1290847200112545804>" #
 
+squares:
+  barrens:
+    - <a:squares_barrens_0:1488779391222681640>
+    - <a:squares_barrens_1:1488779388337000569>
+  glen:
+    - <a:squares_glen_0:1488779385988190318>
+    - <a:squares_glen_1:1488779383995891834>
+  wm:
+    - <a:squares_wm_0:1488779378392301689>
+    - <a:squares_wm_1:1488779376211525642>
+  "null":
+    - <a:squares_null_0:1488780728635232307>
+    - <a:squares_null_1:1488780726370304091>
+  red:
+    - <a:squares_red_0:1488780724546048031>
+    - <a:squares_red_1:1488831699617054770>
+
 # Treasure Icons
 treasures:
   amber: "<:treasure_amulet:1290847574315499530>" #

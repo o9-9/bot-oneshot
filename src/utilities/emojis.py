@@ -22,7 +22,13 @@ class BadgeTiers(TypedDict):
 	gold: str
 	digital: str
 
-
+SquareTypes = Literal[
+	"barrens",
+	"glen",
+	"wm",
+	"null",
+	"red",
+]
 Icons = Literal[
 	"loading",
 	"wool",
@@ -45,6 +51,7 @@ class Emojis(TypedDict):
 	treasures: dict[TreasureTypes, str]
 	progress_bars: dict[Literal["square", "round"], ProgressBar]
 	badges: dict[BadgeNames, BadgeTiers]
+	squares: dict[SquareTypes, tuple[str, str]]
 
 
 def flatten_emojis(data: dict[str, Any], parent_key: str = "") -> dict[str, str]:
