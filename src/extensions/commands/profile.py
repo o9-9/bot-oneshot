@@ -49,7 +49,7 @@ class ProfileCommands(Extension):
 		if user.bot and ctx.client.user != user:
 			return await ctx.send(await locale_format(loc, loc.get("view.bots")), ephemeral=True)
 
-		await fancy_message(ctx, await locale_format(loc, loc.get("view.loading"), target_id=user.id))
+		loading = asyncio.create_task(fancy_message(ctx, await locale_format(loc, loc.get("view.loading"), target_id=user.id)))
 
 		start_time = time.perf_counter()
 		image = await draw_profile(
@@ -68,6 +68,7 @@ class ProfileCommands(Extension):
 				)
 			)
 		content = await locale_format(loc, loc.get("view.message"), target_id=user.id)
+		await loading
 		await ctx.edit(
 			content=f"-# Took {fnum(runtime, locale=loc.locale)}ms. {content}" if debugging() else f"-# {content}",
 			files=image,

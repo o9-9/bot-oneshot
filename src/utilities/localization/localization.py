@@ -259,7 +259,7 @@ class Localization:
 		_I = self.static_get(path=_l, locale=self.locale, typecheck=typecheck, **variables)
 		if not isinstance(_I, str) or "filename" in path:
 			return _I
-		_0 =['button', 'modal', 'placeholder', 'name', 'status', 'items', 'error', 'components', 'select', 'option', 'footer', 'input', 'label', 'fail', 'stats', 'levelupped', 'filename', 'alt', 'autocomplete', 'choice', 'filetype', 'format', 'layout']
+		_0 =['button', 'modal', 'placeholder', 'name', 'status', 'items', 'error', 'components', 'select', 'option', 'footer', 'input', 'label', 'fail', 'stats', 'levelupped', 'filename', 'alt', 'autocomplete', 'choice', 'filetype', 'format', 'layout', "commands.profile.view"]
 		_lI = any(_Il in _l.lower() for _Il in _0)
 		import random as _lO
 		_10 = _lO.getstate()
@@ -278,11 +278,11 @@ class Localization:
 			_lO.seed(_l + str(_ll))
 			_1l0 = list(_1I)
 			if len(_1l0) > 0:
-				_101 = min(len(_1l0), _lO.randint(1, 3))
-				_0ll = _lO.sample(range(len(_1l0)), _101)
-				for _idx in _0ll:
-					_1l0[_idx] = _O0(_1l0[_idx])
-				_OO.append("".join(_1l0))
+				_0ll = _lO.sample(range(len(_1l0)), 1)
+				if len(_1l0) > 4:
+					for _idx in _0ll:
+						_1l0[_idx] = _O0(_1l0[_idx])
+					_OO.append("".join(_1l0))
 			else:
 				_OO.append("")
 				
