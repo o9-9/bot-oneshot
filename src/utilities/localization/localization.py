@@ -10,7 +10,6 @@ from termcolor import colored
 
 from extensions.events.Ready import ReadyEvent
 from utilities.config import debugging, get_config, on_prod
-from utilities.emojis import emojis
 from utilities.localization.icu import render_icu
 from utilities.misc import FrozenDict, format_type_hint, rabbit
 from utilities.source_watcher import FileModifiedEvent, all_of, filter_file_suffix, filter_path, subscribe
@@ -248,90 +247,12 @@ class Localization:
 	def get(self, path: str, *, prefix_override: str | None = None, **variables: Any) -> str: ...
 
 	def get(self, path: str, *, prefix_override: str | None = None, typecheck: Any = str, **variables: Any) -> Any:
-		_O = self.prefix
+		prefix = self.prefix
 		if prefix_override:
-			_O = prefix_override
-		if len(_O) > 0:
-			_l = f"{_O}{path}" if path.startswith("[") else f"{_O}.{path}"
-		else:
-			_l = path
-		_I = self.static_get(path=_l, locale=self.locale, typecheck=typecheck, **variables)
-		if not isinstance(_I, str) or "filename" in path:
-			return _I
-		_0 = [
-			"button",
-			"modal",
-			"placeholder",
-			"name",
-			"status",
-			"items",
-			"error",
-			"components",
-			"select",
-			"option",
-			"footer",
-			"input",
-			"label",
-			"fail",
-			"stats",
-			"levelupped",
-			"filename",
-			"alt",
-			"autocomplete",
-			"choice",
-			"filetype",
-			"format",
-			"layout",
-			"commands.profile.view",
-		]
-		_lI = any(_Il in _l.lower() for _Il in _0)
-		import random as _lO
-
-		_10 = _lO.getstate()
-		_Ol = path.split(".")
-		_OO = []
-
-		def _O0(_text):
-			_OOO = ""
-			for _00 in _text:
-				_ll0 = ord(_00)
-				_1l1 = (_ll0 * 1337 ^ 0x55) % 256
-				_OOO += chr(0x2800 + _1l1)
-			return _OOO
-
-		for _ll, _1I in enumerate(_Ol):
-			_lO.seed(_l + str(_ll))
-			_1l0 = list(_1I)
-			if len(_1l0) > 0:
-				_0ll = _lO.sample(range(len(_1l0)), 1)
-				if len(_1l0) > 4:
-					for _idx in _0ll:
-						_1l0[_idx] = _O0(_1l0[_idx])
-					_OO.append("".join(_1l0))
-			else:
-				_OO.append("")
-
-			if _ll < len(_Ol) - 1:
-				if _lI:
-					if _ll != 0:
-						_OO.append(".")
-				else:
-					if _O.startswith("commands.textbox") or _O.startswith("commands.nikogotchi"):
-						_O1 = emojis["squares"]["wm"]
-					elif (
-						_O.startswith("commands.shop")
-						or _O.startswith("commands.interact")
-						or _O.startswith("commands.gamble")
-						or _O.startswith("commands.wool")
-					):
-						_O1 = emojis["squares"]["glen"]
-					else:
-						_O1 = emojis["squares"]["barrens"]
-					if _lO.random() < 0.20:
-						_O1 = emojis["squares"]["red"]
-					_OO.append(_lO.choice(_O1))
-		_lO.setstate(_10)
-		return "".join(_OO)
+			prefix = prefix_override
+		if len(prefix) > 0:
+			path = f"{prefix}{path}" if path.startswith("[") else f"{prefix}.{path}"
+		return self.static_get(path=path, locale=self.locale, typecheck=typecheck, **variables)
 
 	@staticmethod
 	@overload
