@@ -288,7 +288,12 @@ class GambleCommands(Extension):
 		)
 
 	@gamble.subcommand(sub_cmd_description="Read up on how the gamble command works")
-	async def help(self, ctx: SlashContext):
+	@slash_option(
+		description="Whether you want the response to be visible for others in the channel",
+		name="public",
+		opt_type=OptionType.BOOLEAN,
+	)
+	async def help(self, ctx: SlashContext, public: bool = False):
 		loc = Localization(ctx, prefix="commands.gamble")
 
 		tasks = []
@@ -309,5 +314,5 @@ class GambleCommands(Extension):
 			ctx,
 			f"## {await locale_format(loc, loc.get('wool.slots.title'))}\n"
 			+ await locale_format(loc, loc.get("wool.slots.guide.description"), slot_values="\n".join(point_rows)),
-			ephemeral=True
+			ephemeral=not public,
 		)
