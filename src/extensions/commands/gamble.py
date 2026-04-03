@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from typing import Literal
 
 from interactions import (
+	Button,
+	ButtonStyle,
 	Color,
 	Embed,
 	Extension,
@@ -14,6 +16,7 @@ from interactions import (
 	slash_command,
 	slash_option,
 )
+from interactions.api.events import Component
 
 from utilities.database.schemas import UserData
 from utilities.emojis import emojis
@@ -100,8 +103,6 @@ class GambleCommands(Extension):
 				reply=(await loading)
 			)
 			return await ctx.delete(message=(await loading).id)
-			
-			
 
 		# TAKE the wool
 		await user_data.manage_wool(-bet)
@@ -132,6 +133,19 @@ class GambleCommands(Extension):
 
 		slot_images: list[list] = []
 		slot_values = [0.0, 0.0, 0.0]
+
+		skip_event = asyncio.Event()
+		skip_btn = Button(style=ButtonStyle.SECONDARY, label="Skip", custom_id=f"gamble_skip_{ctx.id}")
+
+		async def wait_for_skip():
+			try:
+				res: Component = await ctx.client.wait_for_component(components=skip_btn, timeout=25.0)
+				skip_event.set()
+				await res.ctx.defer(edit_origin=True)
+			except asyncio.TimeoutError:
+				pass
+
+		skip_task = asyncio.create_task(wait_for_skip())
 
 		async def generate_embed(
 			index: int,
@@ -200,18 +214,30 @@ class GambleCommands(Extension):
 				),
 				color=Colors.DEFAULT,
 			)
-		await loading
-		await ctx.edit(embed=await generate_embed(0, -1, slot_images))
 
+		await loading
+		await ctx.edit(embed=await generate_embed(0, -1, slot_images), components=skip_btn)
+
+		edit_task = None
 		sleep_first_rotata_s = 3
 		for column in range(0, 3):
 			max_rolls = random.randint(8, 9) if column == 2 else 8
 			for i in range(max_rolls):
-				await asyncio.sleep(sleep_first_rotata_s * ((i + 1) / max_rolls) ** 1.5)
-
 				result_embed = await generate_embed(i, column, slot_images)
-				await ctx.edit(embed=result_embed)
+
+				if not skip_event.is_set():
+					delay = sleep_first_rotata_s * ((i + 1) / max_rolls) ** 1.5
+					try:
+						await asyncio.wait_for(skip_event.wait(), timeout=delay)
+					except asyncio.TimeoutError:
+						pass
+
+				if not skip_event.is_set():
+					edit_task = asyncio.create_task(ctx.edit(embed=result_embed, components=skip_btn))
+
 				slot_values[column] = rows[column][i].value
+
+		skip_task.cancel()
 
 		if result_embed.description is not None:
 			result_embed.description = result_embed.description.replace("⇦", "⇦ " + str(round(sum(slot_values) * 100)))
@@ -246,13 +272,16 @@ class GambleCommands(Extension):
 			result_color = Colors.PURE_RED
 			result = "pain" if jackpot else "lost_all"
 
+		if edit_task and not edit_task.done():
+			await edit_task
 		await ctx.edit(
 			embed=await generate_embed(
 				i,
 				column,
 				slot_images,
 				(result, round(sum(slot_values) * 100), win_amount, result_color),
-			)
+			),
+			components=[],
 		)
 
 	@gamble.subcommand(sub_cmd_description="Read up on how the gamble command works")
