@@ -919,17 +919,29 @@ class NikogotchiCommands(Extension):
 		button = await ctx.client.wait_for_component(components=buttons)
 		button_ctx = button.ctx
 
-		await button_ctx.defer(edit_origin=True)
+		loading = asyncio.create_task(button_ctx.defer(edit_origin=True))
 
 		custom_id = button_ctx.custom_id
 
 		if custom_id == f"accept {ctx.author.id} {uid}":
 			del nikogotchi_two._id
 			del nikogotchi_one._id
+			backup = {
+				"a": {},
+				"b": {}
+			}
+			pancakeys = ("pancakes", "glitched_pancakes", "golden_pancakes")
+			for key in pancakeys:
+				backup['a'][key] = nikogotchi_one.__getattribute__(key)
+				backup['b'][key] = nikogotchi_two.__getattribute__(key)
 			await self.save_nikogotchi(nikogotchi_two, str(ctx.author.id))
 			await self.save_nikogotchi(nikogotchi_one, str(uid))
+			for key in pancakeys:
+				nikogotchi_one.__setattr__(key, backup['a'][key])
+				nikogotchi_two.__setattr__(key, backup['b'][key])
 			nikogotchi_two._id = str(ctx.author.id)
 			nikogotchi_one._id = str(uid)
+			del backup
 			embed_two = Embed(
 				description=await locale_format(
 					loc,
@@ -951,7 +963,7 @@ class NikogotchiCommands(Extension):
 				color=Colors.GREEN,
 			)
 			embed_one.set_image(url=one_data.image_url)
-
+			await loading
 			await button_ctx.edit_origin(embed=embed_one, components=[])
 			await ctx.edit(embed=embed_two)
 		else:
