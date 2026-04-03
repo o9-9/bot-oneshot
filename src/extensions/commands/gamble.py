@@ -210,7 +210,7 @@ class GambleCommands(Extension):
 			jackpot = True
 			additional_scoring = 100
 		if user_data.wool < 25:
-			additional_scoring += 14
+			additional_scoring += 0.1
 		win_amount = int(sum(slot_values) * additional_scoring * (bet / 2))
 
 		if win_amount < 0:
@@ -220,7 +220,7 @@ class GambleCommands(Extension):
 		await user_data.manage_wool(win_amount)
 
 		if win_amount > 0:
-			if additional_scoring > 1:
+			if additional_scoring >= 100:
 				result_color = Colors.PURE_YELLOW
 				result = "jackpot"
 			else:
