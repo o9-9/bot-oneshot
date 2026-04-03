@@ -426,7 +426,7 @@ class NikogotchiCommands(Extension):
 	async def nikogotchi_interaction(self, ctx: ComponentContext, _awaitable: Awaitable | None = None ):
 		try:
 			if not _awaitable:
-				_awaitable = asyncio.create_task(ctx.defer())
+				_awaitable = asyncio.create_task(ctx.defer(edit_origin=True))
 
 			match = self.r_nikogotchi_interaction.match(ctx.custom_id)
 
