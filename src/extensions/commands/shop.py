@@ -49,8 +49,8 @@ def pancake_id_to_emoji_index_please_rename_them_in_db(
 
 
 class ShopCommands(Extension):
-	max_buy_sell_limit = 250
-	max_wool_limit = 75_000
+	max_buy_sell_limit = 555
+	max_wool_limit = 300_000
 
 	@listen(Ready)
 	async def loadde_shoppe(self, event: Ready):
