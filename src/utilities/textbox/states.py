@@ -244,7 +244,7 @@ async def state_shortcut(
 
 
 async def state_shortcut(
-	ctx, state_id: str | int, frame_index: Optional[str | int], loc_prefix: str = "main", refresh_ctx: bool = False
+	ctx, state_id: str | int, frame_index: Optional[str | int], loc_prefix: str = "commands.textbox.create", refresh_ctx: bool = False
 ) -> Union[Tuple["Localization", "State"], Tuple["Localization", "State", "Frame"]]:
 	"""
 	            Helper function for textbox to not have to get these variables all the time
@@ -254,13 +254,12 @@ async def state_shortcut(
 	                        with an ephemeral message before the exception is raised.
 	"""
 	loc = Localization(ctx, prefix=loc_prefix)
-	loc = Localization(ctx, prefix="commands.textbox.create")
 	try:
 		state: State = states[str(state_id)]
 	except KeyError:
 		await fancy_message(
 			ctx,
-			await locale_format(loc, loc.get("generic.errors.expired")) + f"\n-# **sid:** {str(state_id)}",
+			await locale_format(loc, loc.get("generic.errors.expired", prefix_override="main")) + f"\n-# **sid:** {str(state_id)}",
 			components=[],
 			ephemeral=True,
 		)
@@ -274,7 +273,7 @@ async def state_shortcut(
 	except ValueError:
 		await fancy_message(
 			ctx,
-			await locale_format(loc, loc.get("errors.invalid_frame_index"), index=str(frame_index)),
+			await locale_format(loc, loc.get("errors.unknown_frame"), index=str(frame_index), total=len(state.frames)),
 			ephemeral=True,
 		)
 		raise StateShortcutError(f"Frame index '{frame_index}' is not a valid integer.")
@@ -287,7 +286,7 @@ async def state_shortcut(
 		else:
 			await fancy_message(
 				ctx,
-				await locale_format(loc, loc.get("errors.unknown_frame"), id=str(frame_index)),
+				await locale_format(loc, loc.get("errors.unknown_frame"), id=str(frame_index), total=len(state.frames)),
 				ephemeral=True,
 			)
 			raise StateShortcutError(f"Frame with index '{idx}' not found in state '{state_id}'.")

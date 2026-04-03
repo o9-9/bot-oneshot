@@ -50,10 +50,6 @@ async def command(self, ctx: SlashContext, user: User | None = None, public: boo
 	max_amount_length = len(fnum(max(owned_treasures.values(), default=0), locale=loc.locale))
 	treasure_string = ""
 	for treasure_nid, item in all_treasures.items():
-		treasure_metadata: dict = await locale_format(loc, loc.get("items.treasures", typecheck=dict))
-
-		name = treasure_metadata[treasure_nid]["name"]
-
 		num = fnum(owned_treasures.get(treasure_nid, 0), loc.locale)
 		rjust = num.rjust(max_amount_length, " ")
 		treasure_string += (
@@ -63,7 +59,7 @@ async def command(self, ctx: SlashContext, user: User | None = None, public: boo
 				spacer=rjust.replace(num, ""),
 				amount=num,
 				icon=emojis["treasures"][treasure_nid],
-				name=name,
+				name=await locale_format(loc, loc.get(f"treasure.{treasure_nid}.name", prefix_override="items", typecheck=str)),
 			)
 			+ "\n"
 		)

@@ -38,7 +38,7 @@ class SettingsCommands(Extension):
 		if not isinstance(channel, MessageableMixin):
 			await fancy_message(
 				ctx,
-				await locale_format(loc, loc.get("errors.channel_not_messageable")),
+				await locale_format(loc, loc.get("errors.channel_not_messageable", prefix_override="commands.settings.server")),
 				color=Colors.BAD,
 			)
 			return False
@@ -48,7 +48,7 @@ class SettingsCommands(Extension):
 		if not has_perms:
 			await fancy_message(
 				ctx,
-				await locale_format(loc, loc.get("errors.channel_insufficient_perms")),
+				await locale_format(loc, loc.get("errors.channel_insufficient_perms", prefix_override="commands.settings.server")),
 				color=Colors.BAD,
 			)
 		return True
@@ -60,7 +60,7 @@ class SettingsCommands(Extension):
 		if not member:
 			await fancy_message(
 				ctx,
-				await locale_format(loc, loc.get("errors.weird_edgecase_number_0")),
+				await locale_format(loc, loc.get("errors.weird_edgecase_number_0", prefix_override="commands.settings.server")),
 				color=Colors.BAD,
 				ephemeral=True,
 			)
@@ -69,7 +69,7 @@ class SettingsCommands(Extension):
 		if not ctx.member.has_permission(Permissions.MANAGE_GUILD):
 			await fancy_message(
 				ctx,
-				await locale_format(loc, loc.get("errors.missing_permissions")),
+				await locale_format(loc, loc.get("errors.missing_permissions", prefix_override="commands.settings.server")),
 				color=Colors.BAD,
 				ephemeral=True,
 			)
@@ -104,7 +104,7 @@ class SettingsCommands(Extension):
 		required=True,
 	)
 	async def transmissions_enabled(self, ctx: SlashContext, value: bool):
-		loc, server_data = await self.shortcut(ctx, prefix="transmissions.enabled")
+		loc, server_data = await self.shortcut(ctx, prefix="commands.settings.server.transmissions.enabled")
 		if not loc or not server_data:
 			return
 		await server_data.transmissions.update(disabled=not value)
@@ -125,7 +125,7 @@ class SettingsCommands(Extension):
 		opt_type=OptionType.CHANNEL,
 	)
 	async def transmissions_channel(self, ctx: SlashContext, channel: GuildText | None = None):
-		loc, server_data = await self.shortcut(ctx, prefix="transmissions.enabled")
+		loc, server_data = await self.shortcut(ctx, prefix="commands.settings.server.transmissions.channel")
 		if not loc or not server_data:
 			return
 
@@ -154,7 +154,7 @@ class SettingsCommands(Extension):
 		required=True,
 	)
 	async def transmissions_images(self, ctx: SlashContext, value: bool):
-		loc, server_data = await self.shortcut(ctx, prefix="transmissions.images")
+		loc, server_data = await self.shortcut(ctx, prefix="commands.settings.server.transmissions.images")
 		if not loc or not server_data:
 			return
 
@@ -176,7 +176,7 @@ class SettingsCommands(Extension):
 		required=True,
 	)
 	async def transmissions_anonymous(self, ctx: SlashContext, value: bool):
-		loc, server_data = await self.shortcut(ctx, prefix="transmissions.enabled")
+		loc, server_data = await self.shortcut(ctx, prefix="commands.settings.server.transmissions.anonymous")
 		if not loc or not server_data:
 			return
 
@@ -200,7 +200,7 @@ class SettingsCommands(Extension):
 		autocomplete=True,
 	)
 	async def transmissions_block(self, ctx: SlashContext, server: str):
-		loc, server_data = await self.shortcut(ctx, prefix="transmissions.block")
+		loc, server_data = await self.shortcut(ctx, prefix="commands.settings.server.transmissions.block")
 		if not loc or not server_data:
 			return
 
@@ -217,7 +217,7 @@ class SettingsCommands(Extension):
 					color=Colors.BAD,
 				),
 			)
-		if server_id in blocklist:
+		if str(server_id) in blocklist:
 			await blocklist.remove(str(server_id))
 		else:
 			await blocklist.append(str(server_id))
@@ -226,7 +226,7 @@ class SettingsCommands(Extension):
 			ctx,
 			await locale_format(
 				loc,
-				loc.get(str(server_id in blocklist).lower()),
+				loc.get(str(str(server_id) in blocklist).lower()),
 				server_name=guild.name if guild else server_id,
 			)
 			+ (
@@ -324,7 +324,7 @@ class SettingsCommands(Extension):
 			if not server_data.welcome.errored
 			else await put_mini(loc, "minis.warnings.channel_lost", type="warn", pre="\n\n")
 		)
-		await server_data.welcome.update(ping=not value)
+		await server_data.welcome.update(ping=value)
 
 		return await fancy_message(
 			ctx,
@@ -334,17 +334,17 @@ class SettingsCommands(Extension):
 
 	@welcome.subcommand(sub_cmd_name="edit", sub_cmd_description="Edit this server's welcome message")
 	async def welcome_edit(self, ctx: SlashContext):
-		loc, server_data = await self.shortcut(ctx, defer=False)
+		loc, server_data = await self.shortcut(ctx, defer=False, prefix="commands.settings.server.welcome.editor")
 		if not loc or not server_data:
 			return
 
 		return await ctx.send_modal(
 			Modal(
 				InputText(
-					label=await locale_format(loc, loc.get("welcome.editor.input")),
+					label=await locale_format(loc, loc.get("input")),
 					style=TextStyles.PARAGRAPH,
 					custom_id="text",
-					placeholder=await locale_format(loc, loc.get("welcome.editor.placeholder")),
+					placeholder=await locale_format(loc, loc.get("placeholder")),
 					max_length=get_config(
 						"textbox.limits.frame-text-length",
 						typecheck=int,
@@ -352,9 +352,9 @@ class SettingsCommands(Extension):
 					)
 					or 1423,
 					required=False,
-					value=server_data.welcome.message or loc.get("welcome.editor.templates.default"),
+					value=server_data.welcome.message or loc.get("templates.default"),
 				),
-				title=await locale_format(loc, loc.get("welcome.editor.title")),
+				title=await locale_format(loc, loc.get("title")),
 				custom_id="welcome_message_editor",
 			)
 		)
@@ -396,7 +396,7 @@ class SettingsCommands(Extension):
 
 		await fancy_message(
 			ctx,
-			await locale_format(loc, loc.get("welcome.editor.done")) + Changed + warn + error,
+			await locale_format(loc, loc.get("editor.done")) + Changed + warn + error,
 			ephemeral=True,
 		)
 

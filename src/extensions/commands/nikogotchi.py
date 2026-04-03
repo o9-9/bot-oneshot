@@ -164,11 +164,11 @@ class NikogotchiCommands(Extension):
 				treasures += (
 					await locale_format(
 						loc,
-						loc.get("items.entry_template", prefix_override="commands.inventory.base"),
+						loc.get("item_entry_template", prefix_override="commands.inventory.base"),
 						spacer=rjust.replace(num, ""),
 						amount=amount,
 						icon=emojis["treasures"][tid],
-						name=await locale_format(loc, loc.get(f"items.treasures.{tid}.name", prefix_override="main")),
+						name=await locale_format(loc, loc.get(f"treasure.{tid}.name", prefix_override="items")),
 					)
 					+ "\n"
 				)

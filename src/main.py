@@ -106,7 +106,7 @@ assign_events(client)
 @listen(Startup)
 async def on_startup(event: Startup):
 	asyncio.create_task(system_monitor_task())
-	asyncio.create_task(set_status(client, "[ Loading... ]"))
+	asyncio.create_task(set_status(client, "[ loading... ]"))
 	load_commands(client)
 	await connect_to_db()
 	asyncio.create_task(load_profile_assets())

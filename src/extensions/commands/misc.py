@@ -53,7 +53,7 @@ class MiscellaneousCommands(Extension):
 			ctx,
 			await locale_format(
 				loc,
-				loc.get("commands.misc.commands.random_wikipedia.wikipedia"),
+				loc.get("template", prefix_override="commands.misc.commands.random_wikipedia"),
 				link=response["content_urls"]["desktop"]["page"],
 				title=response["title"],
 			),
@@ -171,7 +171,10 @@ class MiscellaneousCommands(Extension):
 			result = raw_err.replace('  File "<aexec>", ', " - at ").replace('  File "<string>", ', " - at ")
 
 			if " in redir_prints" in result:
-				result = result.split("method(code, globals, locals)")[1]
+				if "(code, globals, locals)" in result:
+					result = result.split("method(code, globals, locals)")[1]
+				elif "(code, locals)" in result:
+					result = result.split("method(code, locals)")[1]
 			elif "new_local = await coro" in result:
 				state["asnyc_warn"] = True
 				result = result.split("^^^^^^^^^^")[1]
