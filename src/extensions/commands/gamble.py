@@ -87,20 +87,18 @@ class GambleCommands(Extension):
 		opt_type=OptionType.BOOLEAN,
 	)
 	async def wool(self, ctx: SlashContext, bet: int, public: bool = True):
-		loc = Localization(ctx, prefix="commands.gamble")
-		loading = asyncio.create_task(fancy_message(
-			ctx, 
-			await locale_format(loc, loc.get("wool.loading.slots[2]")),
-			ephemeral=not public
-		))
+		loc = Localization(ctx, prefix="commands.gamble.wool")
+		loading = asyncio.create_task(
+			fancy_message(ctx, await locale_format(loc, loc.get("loading.slots[2]")), ephemeral=not public)
+		)
 		user_data: UserData = await UserData(_id=ctx.author.id).fetch()
 		if user_data.wool < bet:
 			await fancy_message(
 				ctx,
-				await locale_format(loc, loc.get("wool.errors.not_enough_wool")),
+				await locale_format(loc, loc.get("errors.not_enough_wool")),
 				color=Colors.BAD,
 				ephemeral=True,
-				reply=(await loading)
+				reply=(await loading),
 			)
 			return await ctx.delete(message=(await loading).id)
 
@@ -135,7 +133,11 @@ class GambleCommands(Extension):
 		slot_values = [0.0, 0.0, 0.0]
 
 		skip_event = asyncio.Event()
-		skip_btn = Button(style=ButtonStyle.SECONDARY, label="Skip", custom_id=f"gamble_skip_{ctx.id}")
+		skip_btn = Button(
+			style=ButtonStyle.SECONDARY,
+			label=await locale_format(loc, loc.get("buttons.skip")),
+			custom_id=f"gamble_skip_{ctx.id}",
+		)
 
 		async def wait_for_skip():
 			try:
@@ -202,10 +204,10 @@ class GambleCommands(Extension):
 					else:
 						ticker += f"{s} ┋ "
 			return Embed(
-				description=f"## {await locale_format(loc, loc.get('wool.slots.title'))}\n\n"
+				description=f"## {await locale_format(loc, loc.get('slots.title'))}\n\n"
 				+ await locale_format(
 					loc,
-					loc.get(f"wool.slots.description_{'running' if not result else 'result'}"),
+					loc.get(f"slots.description_{'running' if not result else 'result'}"),
 					bettor_id=ctx.author.id,
 					bet_amount=bet,
 					result=result[0] if result else None,
