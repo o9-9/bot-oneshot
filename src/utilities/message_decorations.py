@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Literal, Optional
 
-from interactions import BaseComponent, Color, Embed, Message, ModalContext
+from interactions import BaseComponent, Color, Embed, Message, ModalContext, SlashContext, Snowflake_Type
 
 from utilities.emojis import emojis, make_emoji_cdn_url
 
@@ -37,6 +37,7 @@ class Colors:
 def fancy_message(
 	ctx,
 	message: str | None = None,
+	reply: None | str | Snowflake_Type = None,
 	edit: bool = False,
 	allow_edit_origin: bool = False,
 	edit_origin: bool = False,
@@ -67,14 +68,17 @@ def fancy_message(
 		return ctx.edit_origin(content=content, embeds=embeds, components=components)
 	if edit and ctx:
 		return ctx.edit(content=content, embeds=embeds, components=components)
-	if type(ctx) == Message:  # noqa: E721
+	if type(ctx) == Message or reply:  # noqa: E721
 		kwargs = {
 			"content": content,
 			"embeds": embeds,
 			"components": components,
 			"ephemeral": ephemeral,
 		}
-		return ctx.reply(**kwargs)
+		if type(ctx) == SlashContext:
+			return ctx.send(reply_to=reply, **kwargs)
+		else:
+			return ctx.reply(**kwargs)
 	elif type(ctx) == ModalContext:  # noqa: E721
 		return ctx.respond(content=content, embeds=embeds, components=components, ephemeral=ephemeral)
 

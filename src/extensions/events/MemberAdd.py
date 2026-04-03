@@ -38,9 +38,12 @@ class MemberAddEvent(Extension):
 			message,
 			bot_count=len(event.guild.bots),
 			human_count=len(event.guild.humans),
+			
 			member_count=guild.member_count,
 			user_type="bot" if event.member.bot else "human",
 			user_name=event.member.display_name,
+			user_username=event.member.username,	
+			user_id=event.member.id,
 			server_name=guild.name,
 		)
 		buffer = io.BytesIO()

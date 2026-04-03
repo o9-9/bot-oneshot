@@ -193,7 +193,7 @@ class InteractCommands(Extension):
 		loc = Localization(ctx, prefix="commands.interact")
 		loading = asyncio.create_task(
 			ctx.respond(
-				content=await locale_format(loc, loc.get("generic.loading.generic", prefix_override="main")),
+				content=await locale_format(loc, loc.get("loading")),
 				ephemeral=True,
 			)
 		)
@@ -217,7 +217,7 @@ class InteractCommands(Extension):
 		stuff = content.partition("→ ❔ →")
 		loading = asyncio.create_task(
 			ctx.edit_origin(
-				content=stuff[0] + stuff[1].replace("❔", emojis["icons"]["loading"]) + stuff[2],
+				content=f"{stuff[0]}{stuff[1].replace('❔', emojis['icons']['loading'])}{stuff[2]}",
 				allowed_mentions=none_allowed,
 			)
 		)
@@ -252,8 +252,9 @@ class InteractCommands(Extension):
 				)
 			)
 		if not isinstance(interaction, tuple) and self.ie_only_basic(interaction.phrases):
-			await self.send_phrase((ctx, loc), (path, user_one, user_two))
-			return await ctx.message.edit(content="".join(stuff), allowed_mentions=none_allowed)
+			asyncio.create_task(self.send_phrase((ctx, loc), (path, user_one, user_two)))
+			await loading
+			return await ctx.edit(content="".join(stuff), allowed_mentions=none_allowed)
 		return await self.respond((ctx, loc, loading), (int(page), path, user_one, user_two))
 
 	async def respond(
@@ -420,10 +421,9 @@ class InteractCommands(Extension):
 			user_one=self.format_mention(user_one),
 			user_two=self.format_mention(user_two),
 		)
-		phrase = random.choice(interaction["phrases"])
+		message = random.choice(interaction["phrases"])
 		# whether the user set a custom user_one
 		custom_u1 = (user_one if isinstance(user_one, str) else user_one.id) != ctx.author.id
-
 		pingable: list[Snowflake_Type] = []
 		if isinstance(user_one, User) and not custom_u1:
 			pingable.append(user_one.id)
@@ -437,20 +437,20 @@ class InteractCommands(Extension):
 		try:
 			try:
 				if ctx.context == ContextType.PRIVATE_CHANNEL:
-					msg = await ctx.send(content=phrase, allowed_mentions=allowed_mentions)
+					msg = await ctx.send(content=message, allowed_mentions=allowed_mentions)
 				else:
-					msg = await ctx.channel.send(content=phrase, allowed_mentions=allowed_mentions)
+					msg = await ctx.channel.send(content=message, allowed_mentions=allowed_mentions)
 
 			except:
-				msg = await ctx.respond(content=phrase, ephemeral=False, allowed_mentions=allowed_mentions)
+				msg = await ctx.respond(content=message, ephemeral=False, allowed_mentions=allowed_mentions)
 		except Exception as e:
 			return await ctx.send(
 				embeds=Embed(
 					description=f"[ {await locale_format(loc, loc.get('errors.fail'))} ]",
 					color=Colors.BAD,
-				)
+				),
+				ephemeral=True
 			)
-			raise e
 		if user_two.lower() in [
 			f"<@{ctx.client.user.id}>",
 			"@twm",
@@ -458,6 +458,14 @@ class InteractCommands(Extension):
 			"@world machine",
 			"@theworldmachine",
 			"@worldmachine",
+			"twm",
+			"the world machine",
+			"world machine",
+			"theworldmachine",
+			"worldmachine",
 		]:
 			await asyncio.sleep(random.choice([2, 1.5, 0.5, 0]))
-			await msg.add_reaction("1023573456664662066")
+			try:
+				await msg.add_reaction("1454422087824445501")
+			except:
+				pass

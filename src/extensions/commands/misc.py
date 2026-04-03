@@ -145,7 +145,7 @@ class MiscellaneousCommands(Extension):
 			)
 
 		asyncio.create_task(
-			fancy_message(ctx, await locale_format(loc, loc.get("generic.loading.evaluating")), ephemeral=not public)
+			fancy_message(ctx, await locale_format(loc, loc.get("loading", prefix_override="commands.dev.eval")), ephemeral=not public)
 		)
 
 		method = "eval"

@@ -6,7 +6,7 @@ from asyncio import TimeoutError
 from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from typing import Dict, List, Union
+from typing import Awaitable, Dict, List, Union
 
 from interactions import (
 	ActionRow,
@@ -270,13 +270,11 @@ class NikogotchiCommands(Extension):
 		loc = Localization(ctx, prefix="commands.nikogotchi")
 
 		nikogotchi: Nikogotchi = await Nikogotchi(uid).fetch()
-
 		metadata = await fetch_nikogotchi_metadata(nikogotchi.nid)
 		if nikogotchi.status > -1 and metadata:
-			asyncio.create_task(ctx.defer())
-			await fancy_message(
-				ctx, await locale_format(loc, loc.get("generic.loading.nikogotchi", prefix_override="main")), edit=True
-			)
+			loading = asyncio.create_task(fancy_message(
+				ctx, await locale_format(loc, loc.get("loading")), edit=True
+			))
 		else:
 			if not metadata and nikogotchi.nid != "?":
 				buttons: list[BaseComponent | dict] = [
@@ -318,6 +316,7 @@ class NikogotchiCommands(Extension):
 					)
 				else:
 					nikogotchi.available = True
+
 			if not nikogotchi.available:
 				return await fancy_message(
 					ctx,
@@ -332,6 +331,7 @@ class NikogotchiCommands(Extension):
 					),
 					ephemeral=True,
 					color=Colors.BAD,
+					edit=True
 				)
 			selected_nikogotchi: NikogotchiMetadata = await pick_random_nikogotchi(nikogotchi.rarity)
 
@@ -390,7 +390,7 @@ class NikogotchiCommands(Extension):
 					await self.init_rename_flow(button.ctx, nikogotchi.name, True)
 			except TimeoutError:
 				return await self.check(ctx, edit=True)
-		await self.nikogotchi_interaction(ctx)
+		await self.nikogotchi_interaction(ctx, loading)
 
 	async def calculate_treasure_seek(self, uid: str, time_taken: timedelta) -> TreasureSeekResults | None:
 		user_data: UserData = await UserData(_id=uid).fetch()
@@ -423,9 +423,10 @@ class NikogotchiCommands(Extension):
 	r_nikogotchi_interaction = re.compile(r"action_(feed|pet|clean|findtreasure|refresh|callback|exit)_(\d+)$")
 
 	@component_callback(r_nikogotchi_interaction)
-	async def nikogotchi_interaction(self, ctx: ComponentContext):
+	async def nikogotchi_interaction(self, ctx: ComponentContext, _awaitable: Awaitable | None = None ):
 		try:
-			await ctx.defer(edit_origin=True)
+			if not _awaitable:
+				_awaitable = asyncio.create_task(ctx.defer())
 
 			match = self.r_nikogotchi_interaction.match(ctx.custom_id)
 
@@ -442,13 +443,15 @@ class NikogotchiCommands(Extension):
 			custom_id = "refresh"
 
 		if custom_id == "exit":
-			await ctx.delete()
+			return await ctx.delete()
 
 		loc = Localization(ctx, prefix="commands.nikogotchi")
 
 		nikogotchi = await self.get_nikogotchi(str(uid))
 
 		if nikogotchi is None:
+			if _awaitable:
+				await _awaitable
 			return await ctx.edit_origin(
 				embed=Embed(
 					description=await locale_format(loc, loc.get("other.you_invalid")),
@@ -519,7 +522,8 @@ class NikogotchiCommands(Extension):
 			)
 
 			await self.delete_nikogotchi(str(uid))
-
+			if _awaitable:
+				await _awaitable
 			try:
 				await ctx.edit_origin(embed=embed, components=[])
 			except:
@@ -587,6 +591,9 @@ class NikogotchiCommands(Extension):
 
 				buttons[2].label = str(await locale_format(loc, loc.get("components.call_back")))
 				buttons[2].custom_id = f"action_callback_{uid}"
+
+		if _awaitable:
+			await _awaitable
 		try:
 			await ctx.edit_origin(embeds=embeds, components=[ActionRow(select), ActionRow(*buttons)])
 		except:
@@ -626,7 +633,7 @@ class NikogotchiCommands(Extension):
 
 	@component_callback(ff)
 	async def feed_food(self, ctx: ComponentContext):
-		await ctx.defer(edit_origin=True)
+		loading = asyncio.create_task(ctx.defer(edit_origin=True))
 
 		match = self.ff.match(ctx.custom_id)
 		if not match:
@@ -634,6 +641,7 @@ class NikogotchiCommands(Extension):
 		uid = int(match.group(1))
 
 		if ctx.author.id != uid:
+			await loading
 			return await ctx.edit()
 
 		nikogotchi: Nikogotchi | None = await self.get_nikogotchi(str(uid))
@@ -686,6 +694,7 @@ class NikogotchiCommands(Extension):
 						await locale_format(loc, loc.get(f"dialogue.{nikogotchi.nid}.fed", typecheck=tuple))
 					)
 			case _:
+				await loading
 				return await ctx.edit()
 
 		nikogotchi = await nikogotchi.update(
@@ -703,21 +712,26 @@ class NikogotchiCommands(Extension):
 		select = await self.make_food_select(loc, nikogotchi, f"feed_food {ctx.user.id}")
 
 		embeds = await self.get_main_embeds(ctx, nikogotchi, dialogue, stats_update=updated_stats)
-
+		await loading
 		await ctx.edit_origin(embeds=embeds, components=[ActionRow(select), ActionRow(*buttons)])
 
 	@nikogotchi.subcommand(sub_cmd_description="Part ways with your Nikogotchi")
 	async def send_away(self, ctx: SlashContext):
 		loc = Localization(ctx, prefix="commands.nikogotchi")
 
+		loading = asyncio.create_task(fancy_message(
+			ctx, await locale_format(loc, loc.get("loading")), edit=True
+		))
+
 		nikogotchi = await self.get_nikogotchi(str(ctx.author.id))
 
 		if nikogotchi is None:
+			await loading
 			return await fancy_message(
 				ctx,
 				await locale_format(loc, loc.get("other.you_invalid")),
-				ephemeral=True,
 				color=Colors.BAD,
+				edit=True
 			)
 
 		name = nikogotchi.name
@@ -734,13 +748,12 @@ class NikogotchiCommands(Extension):
 				custom_id="cancel",
 			),
 		]
-
-		await ctx.send(
+		await loading
+		await ctx.edit(
 			embed=Embed(
 										description=await locale_format(loc, loc.get("other.send_away.description"), name=name),
 				color=Colors.WARN,
 			),
-			ephemeral=True,
 			components=buttons,
 		)
 
@@ -751,6 +764,7 @@ class NikogotchiCommands(Extension):
 
 		if custom_id == "rehome":
 			await self.delete_nikogotchi(str(ctx.author.id))
+			await loading
 			await ctx.edit(
 				embed=Embed(
 					description=await locale_format(loc, loc.get("other.send_away.success"), name=name),
@@ -783,11 +797,12 @@ class NikogotchiCommands(Extension):
 		loc = Localization(ctx, prefix="commands.nikogotchi")
 
 		if ctx.custom_id.endswith("continue"):
-			await ctx.defer(edit_origin=True)
+			loading = asyncio.create_task(ctx.defer(edit_origin=True))
 		else:
-			await ctx.defer(ephemeral=True)
+			loading = asyncio.create_task(ctx.defer(ephemeral=True))
 		nikogotchi = await self.get_nikogotchi(str(ctx.author.id))
 		if nikogotchi is None:
+			await loading 
 			return await fancy_message(
 				ctx,
 				await locale_format(loc, loc.get("other.you_invalid_get")),
@@ -810,7 +825,6 @@ class NikogotchiCommands(Extension):
 		await fancy_message(
 			ctx,
 			await locale_format(loc, loc.get("other.renaming.response"), new_name=name, old_name=old_name),
-			ephemeral=True,
 			components=components,
 		)
 
@@ -832,16 +846,19 @@ class NikogotchiCommands(Extension):
 	@nikogotchi.subcommand(sub_cmd_description="Show off a nikogotchi in chat")
 	@slash_option(
 		"user",
-		description="Who's nikogotchi would you like to see?",
+		description="Who's nikogotchi would you like to show?",
 		opt_type=OptionType.USER,
 	)
 	async def show(self, ctx: SlashContext, user: User | None = None):
 		loc = Localization(ctx, prefix="commands.nikogotchi")
+		loading = asyncio.create_task(fancy_message(
+			ctx, await locale_format(loc, loc.get("loading"))
+		))
 		if user is None:
 			user = ctx.user
 
 		nikogotchi = await self.get_nikogotchi(str(user.id))
-
+		await loading
 		if nikogotchi is None:
 			return await fancy_message(
 				ctx,
@@ -850,12 +867,15 @@ class NikogotchiCommands(Extension):
 				color=Colors.BAD,
 			)
 
-		await ctx.send(embeds=await self.get_main_embeds(ctx, nikogotchi, preview=True))
+		await ctx.edit(embeds=await self.get_main_embeds(ctx, nikogotchi, preview=True))
 
 	@nikogotchi.subcommand(sub_cmd_description="Trade your Nikogotchi with someone else!")
 	@slash_option("user", description="The user to trade with.", opt_type=OptionType.USER, required=True)
 	async def trade(self, ctx: SlashContext, user: User):
 		loc = Localization(ctx, prefix="commands.nikogotchi")
+		loading = asyncio.create_task(fancy_message(
+			ctx, await locale_format(loc, loc.get("loading")), ephemeral=True
+		))
 
 		try:
 			nikogotchi_one = await self.get_nikogotchi(str(ctx.author.id))
@@ -863,8 +883,9 @@ class NikogotchiCommands(Extension):
 			one_data = await fetch_nikogotchi_metadata(nikogotchi_one.nid)
 			assert one_data is not None
 		except:
+			await loading
 			return await fancy_message(
-				ctx, await locale_format(loc, loc.get("other.you_invalid")), ephemeral=True, color=Colors.BAD
+				ctx, await locale_format(loc, loc.get("other.you_invalid")), color=Colors.BAD, edit=True
 			)
 
 		try:
@@ -873,17 +894,17 @@ class NikogotchiCommands(Extension):
 			two_data = await fetch_nikogotchi_metadata(nikogotchi_two.nid)
 			assert two_data is not None
 		except:
+			await loading
 			return await fancy_message(
 				ctx,
 				await locale_format(loc, loc.get("other.other_invalid")),
-				ephemeral=True,
-				color=Colors.BAD,
+				color=Colors.BAD, edit=True
 			)
-
+		
+		await loading
 		await fancy_message(
 			ctx,
-			await locale_format(loc, loc.get("other.trade.waiting"), receiver_id=user.id),
-			ephemeral=True,
+			await locale_format(loc, loc.get("other.trade.waiting"), receiver_id=user.id), edit=True
 		)
 
 		uid = user.id
@@ -916,7 +937,7 @@ class NikogotchiCommands(Extension):
 			components=buttons,
 		)
 
-		button = await ctx.client.wait_for_component(components=buttons)
+		button = await ctx.client.wait_for_component(components=buttons, timeout=300)
 		button_ctx = button.ctx
 
 		loading = asyncio.create_task(button_ctx.defer(edit_origin=True))
@@ -991,6 +1012,7 @@ class NikogotchiCommands(Extension):
 				description=await locale_format(loc, loc.get("other.trade.success_decline")),
 				color=Colors.RED,
 			)
+			await loading
 			await asyncio.gather(ctx.edit(embed=sender_embed), button_ctx.edit_origin(embed=receiver_embed, components=[]))
 
 	async def init_repronoun_flow(
@@ -1020,11 +1042,12 @@ class NikogotchiCommands(Extension):
 		loc = Localization(ctx, prefix="commands.nikogotchi")
 
 		if ctx.custom_id.endswith("continue"):
-			await ctx.defer(edit_origin=True)
+			loading = asyncio.create_task(ctx.defer(edit_origin=True))
 		else:
-			await ctx.defer(ephemeral=True)
+			loading = asyncio.create_task(ctx.defer(ephemeral=True))
 		nikogotchi = await self.get_nikogotchi(str(ctx.author.id))
 		if nikogotchi is None:
+			await loading
 			return await fancy_message(
 				ctx,
 				await locale_format(loc, loc.get("other.you_invalid_get")),
@@ -1032,6 +1055,7 @@ class NikogotchiCommands(Extension):
 				color=Colors.BAD,
 			)
 		if pronouns != "/" and ("/" not in pronouns or not all(pronouns.split("/"))):
+			await loading
 			return await fancy_message(
 				ctx,
 				await locale_format(loc, loc.get("other.insufficient_pronouns")),
@@ -1050,6 +1074,8 @@ class NikogotchiCommands(Extension):
 					custom_id=f"action_refresh_{ctx.author_id}",
 				)
 			)
+
+		await loading
 		await fancy_message(
 			ctx,
 			await locale_format(

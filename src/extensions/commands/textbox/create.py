@@ -569,8 +569,8 @@ async def respond(
 			]
 		)
 	elif type == "loading":
-		loc = Localization(ctx)
-		content = await locale_format(loc, loc.get("generic.loading.textbox"))
+		loc = Localization(ctx, "commands.textbox.create")
+		content = await locale_format(loc, loc.get("loading"))
 		accent_color = Colors.DEFAULT.value
 		edit = False
 	elif type == "error":

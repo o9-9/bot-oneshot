@@ -78,18 +78,30 @@ class GambleCommands(Extension):
 		opt_type=OptionType.INTEGER,
 		min_value=100,
 	)
-	async def wool(self, ctx: SlashContext, bet: int):
+	@slash_option(
+		description="Whether you want the response to be visible for others in the channel",
+		name="public",
+		opt_type=OptionType.BOOLEAN,
+	)
+	async def wool(self, ctx: SlashContext, bet: int, public: bool = True):
 		loc = Localization(ctx, prefix="commands.gamble")
-		await fancy_message(ctx, await locale_format(loc, loc.get("generic.loading.generic", prefix_override="main")))
+		loading = asyncio.create_task(fancy_message(
+			ctx, 
+			await locale_format(loc, loc.get("wool.loading.slots[2]")),
+			ephemeral=not public
+		))
 		user_data: UserData = await UserData(_id=ctx.author.id).fetch()
-
 		if user_data.wool < bet:
-			return await fancy_message(
+			await fancy_message(
 				ctx,
 				await locale_format(loc, loc.get("wool.errors.not_enough_wool")),
-				ephemeral=True,
 				color=Colors.BAD,
+				ephemeral=True,
+				reply=(await loading)
 			)
+			return await ctx.delete(message=(await loading).id)
+			
+			
 
 		# TAKE the wool
 		await user_data.manage_wool(-bet)
@@ -188,7 +200,7 @@ class GambleCommands(Extension):
 				),
 				color=Colors.DEFAULT,
 			)
-
+		await loading
 		await ctx.edit(embed=await generate_embed(0, -1, slot_images))
 
 		sleep_first_rotata_s = 3
@@ -265,4 +277,5 @@ class GambleCommands(Extension):
 			ctx,
 			f"## {await locale_format(loc, loc.get('wool.slots.title'))}\n"
 			+ await locale_format(loc, loc.get("wool.slots.guide.description"), slot_values="\n".join(point_rows)),
+			ephemeral=True
 		)
